@@ -1,18 +1,18 @@
 #include "L2Cache.h"
 
-unsigned char L1Cache[L1_SIZE];
-unsigned char L2Cache[L2_SIZE];
-unsigned char DRAM[DRAM_SIZE];
-unsigned int time;
+uint8_t L1Cache[L1_SIZE];
+uint8_t L2Cache[L2_SIZE];
+uint8_t DRAM[DRAM_SIZE];
+uint32_t time;
 Cache SimpleCache;
 
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
 
-unsigned int getTime() { return time; }
+uint32_t getTime() { return time; }
 
 /****************  RAM memory (byte addressable) ***************/
-void accessDRAM(int address, unsigned char *data, int mode) {
+void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
   if (address >= DRAM_SIZE - WORD_SIZE + 1)
     exit(-1);
@@ -32,25 +32,25 @@ void accessDRAM(int address, unsigned char *data, int mode) {
 
 void initCache() { SimpleCache.init = 0; }
 
-void accessL1(int address, unsigned char *data, int mode) {
+void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
-  unsigned int index, Tag, MemAddress;
-  unsigned char TempBlock[BLOCK_SIZE];
+  uint32_t index, Tag, MemAddress;
+  uint8_t TempBlock[BLOCK_SIZE];
 
   /* init cache */
-  if (SimpleCache.init == 0) {
-    for (int i = 0; i < 8; i++)
+  if (SimpleCache.init == 0) {  
+    for (int i = 0; i < L1_SIZE/BLOCK_SIZE; i++)
       SimpleCache.line[i].Valid = 0;
     SimpleCache.init = 1;
   }
-  index = (address & 0b00000000000000000000000000111000) >> 3;
+  index = (address & 0b00000000000000000011111111000000) >> 6;
 
   CacheLine *Line = &SimpleCache.line[index];
 
-  Tag = address >> 6; // Why do I do this?
+  Tag = address >> 14; // Why do I do this?
 
   MemAddress = address >> 3; // again this....!
-  MemAddress = address << 3; // address of the block in memory
+  MemAddress = MemAddress << 3; // address of the block in memory
 
   /* access Cache*/
 
@@ -89,10 +89,10 @@ void accessL1(int address, unsigned char *data, int mode) {
   }
 }
 
-void read(int address, unsigned char *data) {
+void read(uint32_t address, uint8_t *data) {
   accessL1(address, data, MODE_READ);
 }
 
-void write(int address, unsigned char *data) {
+void write(uint32_t address, uint8_t *data) {
   accessL1(address, data, MODE_WRITE);
 }
