@@ -14,7 +14,7 @@ uint32_t getTime() { return time; }
 /****************  RAM memory (byte addressable) ***************/
 void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
-  if (address >= DRAM_SIZE - WORD_SIZE + 1)
+  if (address >= DRAM_SIZE - BLOCK_SIZE + 1)
     exit(-1);
 
   if (mode == MODE_READ) {
@@ -35,7 +35,7 @@ void initCache() { SimpleCache.init = 0; }
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   uint32_t Tag, MemAddress;
-  uint8_t TempBlock[BLOCK_SIZE];
+  uint8_t TempBlock[BLOCK_SIZE], word_index;
 
   /* init cache */
   if (SimpleCache.init == 0) {
@@ -45,7 +45,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   CacheLine *Line = &SimpleCache.line;
 
-  Tag = address >> 6; // Why do I do this?
+  Tag = address >> 6; // Why do I do this? Offset
 
   MemAddress = address >> 3; // again this....!
   MemAddress = MemAddress << 3; // address of the block in memory
@@ -67,21 +67,15 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
+  word_index = address % (BLOCK_SIZE/WORD_SIZE);
+
   if (mode == MODE_READ) {    // read data from cache line
-    if (0 == (address % 8)) { // even word on block
-      memcpy(data, &(L1Cache[0]), WORD_SIZE);
-    } else { // odd word on block
-      memcpy(data, &(L1Cache[WORD_SIZE]), WORD_SIZE);
-    }
+    memcpy(data, &(L1Cache[word_index * WORD_SIZE]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
-    if (!(address % 8)) {   // even word on block
-      memcpy(&(L1Cache[0]), data, WORD_SIZE);
-    } else { // odd word on block
-      memcpy(&(L1Cache[WORD_SIZE]), data, WORD_SIZE);
-    }
+    memcpy(&(L1Cache[word_index * WORD_SIZE]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     Line->Dirty = 1;
   }
