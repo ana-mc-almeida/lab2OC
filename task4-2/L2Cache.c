@@ -1,4 +1,4 @@
-#include "L1Cache.h"
+#include "L2Cache.h"
 
 unsigned char L1Cache[L1_SIZE];
 unsigned char L2Cache[L2_SIZE];
@@ -47,7 +47,7 @@ void accessL1(int address, unsigned char *data, int mode) {
 
   CacheLine *Line = &SimpleCache.line[index];
 
-  Tag = address >> 6; // Why do I do this? Offset + index
+  Tag = address >> 6; // Why do I do this?
 
   MemAddress = address >> 3; // again this....!
   MemAddress = address << 3; // address of the block in memory

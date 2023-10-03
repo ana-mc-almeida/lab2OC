@@ -1,4 +1,4 @@
-#include "SimpleCache.h"
+#include "task4-2/L2Cache.h"
 
 int main() {
 
@@ -17,11 +17,11 @@ int main() {
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  write(8, (unsigned char *)(&value1));
+  write(512, (unsigned char *)(&value1));
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  read(8, (unsigned char *)(&value2));
+  read(512, (unsigned char *)(&value2));
   clock = getTime();
   printf("Time: %d\n", clock);
 
