@@ -4,8 +4,8 @@ uint8_t L1Cache[L1_SIZE];
 uint8_t L2Cache[L2_SIZE];
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
-Cache1 SimpleCache1;
-Cache2 SimpleCache2;
+CacheL1 SimpleCache1;
+CacheL2 SimpleCache2;
 
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
@@ -31,7 +31,7 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 
 /*********************** L1 cache *************************/
 
-void initCache() { SimpleCache.init = 0; }
+void initCache() { SimpleCache1.init = 0; }
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
@@ -39,14 +39,14 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   uint8_t TempBlock[BLOCK_SIZE], word_index;
 
   /* init cache */
-  if (SimpleCache.init == 0) {  
+  if (SimpleCache1.init == 0) {  
     for (int i = 0; i < L1_SIZE/BLOCK_SIZE; i++)
-      SimpleCache.line[i].Valid = 0;
-    SimpleCache.init = 1;
+      SimpleCache1.line[i].Valid = 0;
+    SimpleCache1.init = 1;
   }
   index = (address & 0b00000000000000000011111111000000) >> 6;
 
-  CacheLine *Line = &SimpleCache.line[index];
+  CacheLine *Line = &SimpleCache1.line[index];
 
   Tag = address >> 14; // Why do I do this?
 
