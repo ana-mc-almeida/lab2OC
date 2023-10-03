@@ -56,6 +56,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
+      MemAddress = Line->Tag << 3;        // get address of the block in memory
       accessDRAM(MemAddress, &(L1Cache[0]),
                  MODE_WRITE); // then write back old block
     }

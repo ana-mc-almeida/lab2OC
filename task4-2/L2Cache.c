@@ -4,7 +4,8 @@ uint8_t L1Cache[L1_SIZE];
 uint8_t L2Cache[L2_SIZE];
 uint8_t DRAM[DRAM_SIZE];
 uint32_t time;
-Cache SimpleCache;
+Cache1 SimpleCache1;
+Cache2 SimpleCache2;
 
 /**************** Time Manipulation ***************/
 void resetTime() { time = 0; }
@@ -35,7 +36,7 @@ void initCache() { SimpleCache.init = 0; }
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   uint32_t index, Tag, MemAddress;
-  uint8_t TempBlock[BLOCK_SIZE];
+  uint8_t TempBlock[BLOCK_SIZE], word_index;
 
   /* init cache */
   if (SimpleCache.init == 0) {  
@@ -58,6 +59,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
+      MemAddress = Line->Tag << 3;        // get address of the block in memory
       accessDRAM(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // then write back old block
     }
@@ -69,21 +71,15 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
+  word_index = address % (BLOCK_SIZE/WORD_SIZE);
+
   if (mode == MODE_READ) {    // read data from cache line
-    if (0 == (address % 8)) { // even word on block
-      memcpy(data, &(L1Cache[index * BLOCK_SIZE]), WORD_SIZE);
-    } else { // odd word on block
-      memcpy(data, &(L1Cache[index * BLOCK_SIZE + WORD_SIZE]), WORD_SIZE);
-    }
+    memcpy(data, &(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
-    if (!(address % 8)) {   // even word on block
-      memcpy(&(L1Cache[index * BLOCK_SIZE]), data, WORD_SIZE);
-    } else { // odd word on block
-      memcpy(&(L1Cache[index * BLOCK_SIZE + WORD_SIZE]), data, WORD_SIZE);
-    }
+    memcpy(&(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     Line->Dirty = 1;
   }
