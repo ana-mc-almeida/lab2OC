@@ -47,8 +47,8 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   Tag = address >> 6; // Why do I do this? Offset
 
-  MemAddress = address >> 3; // again this....!
-  MemAddress = MemAddress << 3; // address of the block in memory
+  MemAddress = address >> 6; // again this....!
+  MemAddress = MemAddress << 6; // address of the block in memory
 
   /* access Cache*/
 
@@ -56,7 +56,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = Line->Tag << 3;        // get address of the block in memory
+      MemAddress = Line->Tag << 6;        // get address of the block in memory
       accessDRAM(MemAddress, &(L1Cache[0]),
                  MODE_WRITE); // then write back old block
     }

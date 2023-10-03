@@ -29,9 +29,60 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
   }
 }
 
+/*********************** L2 cache *************************/
+
+void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
+  uint32_t index, Tag, MemAddress;
+  uint8_t TempBlock[BLOCK_SIZE];
+
+  /* init cache */
+  if (SimpleCache2.init == 0) {  
+    for (int i = 0; i < L2_SIZE/BLOCK_SIZE; i++)
+      SimpleCache2.line[i].Valid = 0;
+    SimpleCache2.init = 1;
+  }
+  index = (address & 0b00000000000000000111111111000000) >> 6;
+
+  CacheLine *Line = &SimpleCache2.line[index];
+
+  Tag = address >> 15; // Why do I do this?
+
+  MemAddress = address >> 6; // again this....!
+  MemAddress = MemAddress << 6; // address of the block in memory
+
+  /* access Cache*/
+
+  if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
+    accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
+
+    if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
+      MemAddress = (Line->Tag << 15) | index;   // get address of the block in memory
+      accessDRAM(MemAddress, &(L2Cache[index * BLOCK_SIZE]),
+                 MODE_WRITE); // then write back old block
+    }
+
+    memcpy(&(L2Cache[index * BLOCK_SIZE]), TempBlock,
+           BLOCK_SIZE); // copy new block to cache line
+    Line->Valid = 1;
+    Line->Tag = Tag;
+    Line->Dirty = 0;
+  } // if miss, then replaced with the correct block
+
+  if (mode == MODE_READ) {    // read data from cache line
+    memcpy(data, &(L2Cache[index * BLOCK_SIZE]), BLOCK_SIZE);
+    time += L2_READ_TIME;
+  }
+
+  if (mode == MODE_WRITE) { // write data from cache line
+    memcpy(&(L2Cache[index * BLOCK_SIZE]), data, BLOCK_SIZE);
+    time += L2_WRITE_TIME;
+    Line->Dirty = 1;
+  }
+}
+
 /*********************** L1 cache *************************/
 
-void initCache() { SimpleCache1.init = 0; }
+void initCache() { SimpleCache1.init = 0; SimpleCache2.init = 0; }
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
@@ -50,17 +101,17 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   Tag = address >> 14; // Why do I do this?
 
-  MemAddress = address >> 3; // again this....!
-  MemAddress = MemAddress << 3; // address of the block in memory
+  MemAddress = address >> 6; // again this....!
+  MemAddress = MemAddress << 6; // address of the block in memory
 
   /* access Cache*/
 
   if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
-    accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
+    accessL2(MemAddress, TempBlock, MODE_READ); // get new block from L2
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = Line->Tag << 3;        // get address of the block in memory
-      accessDRAM(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
+      MemAddress = (Line->Tag << 14) | index;   // get address of the block in memory
+      accessL2(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // then write back old block
     }
 
