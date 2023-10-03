@@ -17,11 +17,11 @@ int main() {
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  write(32768, (uint8_t *)(&value1));
+  write(16384, (uint8_t *)(&value1));
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  read(32768, (uint8_t *)(&value2));
+  read(16384, (uint8_t *)(&value2));
   clock = getTime();
   printf("Time: %d\n", clock);
 
