@@ -7,6 +7,8 @@
 #include <stdint.h>
 #include "../Cache.h"
 
+#define ASSOC_L2 2
+
 void resetTime();
 
 uint32_t getTime();
@@ -41,7 +43,7 @@ typedef struct CacheL1 {
 
 typedef struct CacheL2 {
   uint32_t init;
-  Cache2Line line[L2_SIZE/BLOCK_SIZE/2];
+  Cache2Line line[L2_SIZE/BLOCK_SIZE/ASSOC_L2];
 } CacheL2;
 
 /*********************** Interfaces *************************/

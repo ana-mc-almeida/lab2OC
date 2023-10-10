@@ -34,8 +34,8 @@ void initCache() { SimpleCache.init = 0; }
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
-  uint32_t index, Tag, MemAddress;
-  uint8_t TempBlock[BLOCK_SIZE], word_index;
+  uint32_t index, Tag, MemAddress, offset;
+  uint8_t TempBlock[BLOCK_SIZE];
 
   /* init cache */
   if (SimpleCache.init == 0) {  
@@ -43,6 +43,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
       SimpleCache.line[i].Valid = 0;
     SimpleCache.init = 1;
   }
+  offset = address % BLOCK_SIZE;
   index = (address & 0b00000000000000000011111111000000) >> 6;
 
   CacheLine *Line = &SimpleCache.line[index];
@@ -70,15 +71,13 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
-  word_index = address % (BLOCK_SIZE/WORD_SIZE);
-
   if (mode == MODE_READ) {    // read data from cache line
-    memcpy(data, &(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), WORD_SIZE);
+    memcpy(data, &(L1Cache[index * BLOCK_SIZE + offset]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
-    memcpy(&(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), data, WORD_SIZE);
+    memcpy(&(L1Cache[index * BLOCK_SIZE + offset]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     Line->Dirty = 1;
   }
