@@ -29,10 +29,10 @@ typedef struct Cache1Line {
 } Cache1Line;
 
 typedef struct Cache2Line {
-  uint8_t Valid[2];
-  uint8_t Dirty[2];
-  uint32_t Tag[2];
-  uint8_t flagLRU;
+  uint8_t Valid;
+  uint8_t Dirty;
+  uint32_t Tag;
+  uint32_t Time;
 } Cache2Line;
 
 
@@ -43,7 +43,7 @@ typedef struct CacheL1 {
 
 typedef struct CacheL2 {
   uint32_t init;
-  Cache2Line line[L2_SIZE/BLOCK_SIZE/ASSOC_L2];
+  Cache2Line line[L2_SIZE/(BLOCK_SIZE*ASSOC_L2)][ASSOC_L2];
 } CacheL2;
 
 /*********************** Interfaces *************************/

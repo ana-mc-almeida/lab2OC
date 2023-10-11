@@ -34,7 +34,7 @@ void initCache() { SimpleCache.init = 0; }
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
-  uint32_t index, Tag, MemAddress, offset;
+  uint32_t index, Tag, MemAddress, offset, word_index;
   uint8_t TempBlock[BLOCK_SIZE];
 
   /* init cache */
@@ -44,14 +44,12 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     SimpleCache.init = 1;
   }
   offset = address % BLOCK_SIZE;
-  index = (address & 0b00000000000000000011111111000000) >> 6;
-
+  index = (address/BLOCK_SIZE) % (L1_SIZE/BLOCK_SIZE);
+  Tag = address/L1_SIZE;
+  
   CacheLine *Line = &SimpleCache.line[index];
 
-  Tag = address >> 14; // Why do I do this?
-
-  MemAddress = address >> 6; // again this....!
-  MemAddress = MemAddress << 6; // address of the block in memory
+  MemAddress = address - offset; // address of the block in memory
 
   /* access Cache*/
 
@@ -59,7 +57,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = (Line->Tag << 14) | index;        // get address of the block in memory
+      MemAddress = (Line->Tag * L1_SIZE) | (index * BLOCK_SIZE); // get address of the block in memory
       accessDRAM(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // then write back old block
     }
@@ -71,13 +69,15 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
+  word_index = offset / WORD_SIZE;
+
   if (mode == MODE_READ) {    // read data from cache line
-    memcpy(data, &(L1Cache[index * BLOCK_SIZE + offset]), WORD_SIZE);
+    memcpy(data, &(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), WORD_SIZE);
     time += L1_READ_TIME;
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
-    memcpy(&(L1Cache[index * BLOCK_SIZE + offset]), data, WORD_SIZE);
+    memcpy(&(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
     Line->Dirty = 1;
   }
