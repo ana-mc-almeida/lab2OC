@@ -34,7 +34,7 @@ void initCache() { SimpleCache.init = 0; }
 
 void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
-  uint32_t index, Tag, MemAddress, offset, word_index;
+  uint32_t index, tag, MemAddress, offset, word_index;
   uint8_t TempBlock[BLOCK_SIZE];
 
   /* init cache */
@@ -45,7 +45,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   }
   offset = address % BLOCK_SIZE;
   index = (address/BLOCK_SIZE) % (L1_SIZE/BLOCK_SIZE);
-  Tag = address/L1_SIZE;
+  tag = address/L1_SIZE;
   
   CacheLine *Line = &SimpleCache.line[index];
 
@@ -53,7 +53,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   /* access Cache*/
 
-  if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
+  if (!Line->Valid || Line->Tag != tag) {         // if block not present - miss
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
@@ -65,7 +65,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
     memcpy(&(L1Cache[index * BLOCK_SIZE]), TempBlock,
            BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
-    Line->Tag = Tag;
+    Line->Tag = tag;
     Line->Dirty = 0;
   } // if miss, then replaced with the correct block
 
