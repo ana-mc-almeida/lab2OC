@@ -101,7 +101,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
       SimpleCache1.line[i].Valid = 0;
     SimpleCache1.init = 1;
   }
-  offset = address % (BLOCK_SIZE/WORD_SIZE);
+  offset = address % BLOCK_SIZE;
   index = (address & 0b00000000000000000011111111000000) >> 6;
 
   Cache1Line *Line = &SimpleCache1.line[index];
