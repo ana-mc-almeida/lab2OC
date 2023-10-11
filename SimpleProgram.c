@@ -10,6 +10,7 @@ int main() {
   value2 = 0;
 
   write(1, (uint8_t *)(&value1));
+
   clock = getTime();
   printf("Time: %d\n", clock);
 
@@ -17,19 +18,11 @@ int main() {
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  write(32768, (uint8_t *)(&value1));
+  write(512, (uint8_t *)(&value1));
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  read(32768, (uint8_t *)(&value2));
-  clock = getTime();
-  printf("Time: %d\n", clock);
-
-  write(1, (uint8_t *)(&value1));
-  clock = getTime();
-  printf("Time: %d\n", clock);
-
-  read(1, (uint8_t *)(&value2));
+  read(512, (uint8_t *)(&value2));
   clock = getTime();
   printf("Time: %d\n", clock);
 
