@@ -12,7 +12,23 @@ int main() {
   clock = getTime();
   printf("Time: %d\n", clock);
 
-  write(32768, (uint8_t *)(&value1));
+  read(1, (uint8_t *)(&value1));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  write(512, (uint8_t *)(&value1));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  read(512, (uint8_t *)(&value1));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  write(32769, (uint8_t *)(&value1));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  read(32769, (uint8_t *)(&value1));
   clock = getTime();
   printf("Time: %d\n", clock);
 
