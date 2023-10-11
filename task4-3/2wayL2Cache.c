@@ -40,7 +40,7 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
 /*********************** L2 cache *************************/
 
 void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
-  uint32_t index, Tag, MemAddress, LRU;
+  uint32_t index, tag, MemAddress, LRU;
 
   /* init cache */
   if (SimpleCache2.init == 0) {  
@@ -53,24 +53,22 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     SimpleCache2.init = 1;
   }
   index = (address/BLOCK_SIZE) % (L2_SIZE/(BLOCK_SIZE*ASSOC_L2));
-  Tag = address/(L2_SIZE*ASSOC_L2);
+  tag = address/(L2_SIZE/ASSOC_L2);
 
   Cache2Line *Line[ASSOC_L2];
   for (int i = 0; i < ASSOC_L2; i++)
     Line[i] = &(SimpleCache2.line[index][i]);
-
   /* access Cache*/
   int i;
   for (i = 0; i < ASSOC_L2; i++)
-    if (Line[i]->Valid && Line[i]->Tag == Tag)
+    if (Line[i]->Valid && Line[i]->Tag == tag)
       break;
-  
   if (i == ASSOC_L2) {  // if block not present - miss
     LRU = getLRU(Line);
 
     if (Line[LRU]->Valid && Line[LRU]->Dirty) {
       // get address of the block in memory
-      MemAddress = (Line[LRU]->Tag * (L2_SIZE/ASSOC_L2)) | (index * BLOCK_SIZE);
+      MemAddress = (Line[LRU]->Tag * (L2_SIZE/ASSOC_L2)) + (index * BLOCK_SIZE);
       accessDRAM(MemAddress, &(L2Cache[index * BLOCK_SIZE * ASSOC_L2 + BLOCK_SIZE * LRU]),
                  MODE_WRITE); // then write back old block 
     }
@@ -78,7 +76,7 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
     // get new block from DRAM and copy it to cache line
     accessDRAM(address, &(L2Cache[index * BLOCK_SIZE * ASSOC_L2 + BLOCK_SIZE * LRU]), MODE_READ);
     Line[LRU]->Valid = 1;
-    Line[LRU]->Tag = Tag;
+    Line[LRU]->Tag = tag;
     Line[LRU]->Dirty = 0;
     i = LRU;
   } // if miss, then replaced with the correct block
@@ -123,7 +121,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
       // get address of the block in memory
-      MemAddress = ((Line->Tag * L1_SIZE) | (index * BLOCK_SIZE));
+      MemAddress = ((Line->Tag * L1_SIZE) + (index * BLOCK_SIZE));
       accessL2(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // first write back old block
     }

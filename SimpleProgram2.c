@@ -9,10 +9,7 @@ int main() {
   value1 = -1;
   value2 = 0;
 
-  write(1, (uint8_t *)(&value1));
-  clock = getTime();
-  printf("Time: %d\n", clock);
-
+  // block does not get dirty because there is no write
   read(1, (uint8_t *)(&value2));
   clock = getTime();
   printf("Time: %d\n", clock);
@@ -30,6 +27,14 @@ int main() {
   printf("Time: %d\n", clock);
 
   read(32768, (uint8_t *)(&value2));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  write(49152, (uint8_t *)(&value1));
+  clock = getTime();
+  printf("Time: %d\n", clock);
+
+  read(49152, (uint8_t *)(&value2));
   clock = getTime();
   printf("Time: %d\n", clock);
 

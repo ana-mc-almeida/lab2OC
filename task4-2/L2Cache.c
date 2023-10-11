@@ -101,7 +101,7 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
       // get address of the block in memory
-      MemAddress = ((Line->Tag * L1_SIZE) | (index * BLOCK_SIZE));
+      MemAddress = ((Line->Tag * L1_SIZE) + (index * BLOCK_SIZE));
       accessL2(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // first write back old block
     }
