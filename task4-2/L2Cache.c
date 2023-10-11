@@ -21,20 +21,18 @@ void accessDRAM(uint32_t address, uint8_t *data, uint32_t mode) {
   if (mode == MODE_READ) {
     memcpy(data, &(DRAM[address]), BLOCK_SIZE);
     time += DRAM_READ_TIME;
-    printf("\t%d\n", time);
   }
 
   if (mode == MODE_WRITE) {
     memcpy(&(DRAM[address]), data, BLOCK_SIZE);
     time += DRAM_WRITE_TIME;
-    printf("\t%d\n", time);
   }
 }
 
 /*********************** L2 cache *************************/
 
 void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
-  uint32_t index, Tag, MemAddress, offset;
+  uint32_t index, Tag, MemAddress;
   uint8_t TempBlock[BLOCK_SIZE];
 
   /* init cache */
@@ -43,22 +41,18 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
       SimpleCache2.line[i].Valid = 0;
     SimpleCache2.init = 1;
   }
-  offset = address % BLOCK_SIZE;
   index = (address/BLOCK_SIZE) % (L2_SIZE/BLOCK_SIZE);
   Tag = address/L2_SIZE;
 
   CacheLine *Line = &SimpleCache2.line[index];
 
-  MemAddress = address - offset; // address of the block in memory
+  MemAddress = address; // address of the block in memory
 
   /* access Cache*/
-
   if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
     accessDRAM(MemAddress, TempBlock, MODE_READ); // get new block from DRAM
-
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      printf("entrei\n");
-      MemAddress = (Line->Tag * L2_SIZE) | (index * BLOCK_SIZE); // get address of the block in memory
+      MemAddress = (Line->Tag * L2_SIZE) + (index * BLOCK_SIZE); // get address of the block in memory
       accessDRAM(MemAddress, &(L2Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // then write back old block
     }
@@ -73,13 +67,11 @@ void accessL2(uint32_t address, uint8_t *data, uint32_t mode) {
   if (mode == MODE_READ) {    // read data from cache line
     memcpy(data, &(L2Cache[index * BLOCK_SIZE]), BLOCK_SIZE);
     time += L2_READ_TIME;
-    printf("\t%d\n", time);
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
     memcpy(&(L2Cache[index * BLOCK_SIZE]), data, BLOCK_SIZE);
     time += L2_WRITE_TIME;
-    printf("\t%d\n", time);
     Line->Dirty = 1;
   }
 }
@@ -105,19 +97,17 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
 
   CacheLine *Line = &SimpleCache1.line[index];
 
-  MemAddress = address - offset; // address of the block in memory
-
   /* access Cache*/
 
   if (!Line->Valid || Line->Tag != Tag) {         // if block not present - miss
-    accessL2(MemAddress, TempBlock, MODE_READ); // get new block from L2
+    
 
     if ((Line->Valid) && (Line->Dirty)) { // line has dirty block
-      MemAddress = (Line->Tag * L1_SIZE) | (index * BLOCK_SIZE); // get address of the block in memory
+      MemAddress = ((Line->Tag * L1_SIZE) | (index * BLOCK_SIZE)); // get address of the block in memory
       accessL2(MemAddress, &(L1Cache[index * BLOCK_SIZE]),
                  MODE_WRITE); // then write back old block
     }
-
+    accessL2(address, TempBlock, MODE_READ); // get new block from L2
     memcpy(&(L1Cache[index * BLOCK_SIZE]), TempBlock,
            BLOCK_SIZE); // copy new block to cache line
     Line->Valid = 1;
@@ -130,35 +120,19 @@ void accessL1(uint32_t address, uint8_t *data, uint32_t mode) {
   if (mode == MODE_READ) {    // read data from cache line
     memcpy(data, &(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), WORD_SIZE);
     time += L1_READ_TIME;
-    printf("\t%d\n", time);
   }
 
   if (mode == MODE_WRITE) { // write data from cache line
     memcpy(&(L1Cache[index * BLOCK_SIZE + word_index * WORD_SIZE]), data, WORD_SIZE);
     time += L1_WRITE_TIME;
-    printf("\t%d\n", time);
     Line->Dirty = 1;
   }
 }
 
 void read(uint32_t address, uint8_t *data) {
   accessL1(address, data, MODE_READ);
-  for (int i = 0; i < L1_SIZE/BLOCK_SIZE; i++)
-    if(SimpleCache1.line[i].Valid)
-      printf("Tag L1: %d\n", SimpleCache1.line[i].Tag);
-  for (int i = 0; i < L2_SIZE/BLOCK_SIZE; i++)
-    if(SimpleCache2.line[i].Valid)
-      printf("Tag: %d\n", SimpleCache2.line[i].Tag);
-
-
 }
 
 void write(uint32_t address, uint8_t *data) {
   accessL1(address, data, MODE_WRITE);
-  for (int i = 0; i < L1_SIZE/BLOCK_SIZE; i++)
-    if(SimpleCache1.line[i].Valid)
-      printf("Tag L1: %d\n", SimpleCache1.line[i].Tag);
-  for (int i = 0; i < L2_SIZE/BLOCK_SIZE; i++)
-    if(SimpleCache2.line[i].Valid)
-      printf("Tag L2: %d\n", SimpleCache2.line[i].Tag);
 }

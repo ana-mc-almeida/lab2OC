@@ -1,4 +1,4 @@
-#include "../task4-3/2wayL2Cache.h"
+#include "../task4-2/L2Cache.h"
 
 int main() {
 
